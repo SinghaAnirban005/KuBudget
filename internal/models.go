@@ -119,3 +119,8 @@ type ErrorResponse struct {
 	Code      int       `json:"code"`
 	Timestamp time.Time `json:"timestamp"`
 }
+
+type SamplePair struct {
+	Timestamp time.Time `json:"timestamp"`
+	Value     float64   `json:"value"`
+}
