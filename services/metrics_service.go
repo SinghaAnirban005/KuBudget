@@ -74,8 +74,8 @@ func (s *MetricsService) GetPrometheusMetrics(ctx context.Context, namespace, po
 	}, nil
 }
 
-func (s *MetricsService) GetClusterMetrics(ctx context.Context, namespace string) (*internal.ClusterMetrics, error) {
-	nodes, err := s.k8sClient.GetNodes(namespace)
+func (s *MetricsService) GetClusterMetrics(ctx context.Context) (*internal.ClusterMetrics, error) {
+	nodes, err := s.k8sClient.GetNodes()
 	if err != nil {
 		return nil, fmt.Errorf("Failed to get nodes %v", err)
 	}

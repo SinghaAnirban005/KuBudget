@@ -65,7 +65,7 @@ func (c *Client) GetPods(namespace string) (*corev1.PodList, error) {
 	return c.clientset.CoreV1().Pods(namespace).List(context.TODO(), metav1.ListOptions{})
 }
 
-func (c *Client) GetNodes(namespace string) (*corev1.NodeList, error) {
+func (c *Client) GetNodes() (*corev1.NodeList, error) {
 	return c.clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
 }
 
