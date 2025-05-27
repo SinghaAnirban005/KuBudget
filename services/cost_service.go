@@ -59,32 +59,39 @@ func (s *CostService) GetCostOverview(ctx context.Context) (*internal.CostOvervi
 
 }
 
-// func (s *CostService) GetCostHistory(ctx context.Context, duration time.Duration, step time.Duration, namespace string) (*internal.CostHistory, error) {
-// 	endTime := time.Now()
-// 	startTime := endTime.Add(-duration)
+func (s *CostService) GetCostHistory(ctx context.Context, duration time.Duration, step time.Duration, namespace string) (*internal.CostHistory, error) {
+	endTime := time.Now()
+	startTime := endTime.Add(-duration)
 
-// 	cpuQuery := "rate(container_cpu_usage_seconds_total[5m])"
-// 	if namespace != "" {
-// 		cpuQuery = fmt.Sprintf(`rate(container_cpu_usage_seconds_total{namespace="%s"}[5m])`, namespace)
-// 	}
+	cpuQuery := "rate(container_cpu_usage_seconds_total[5m])"
+	if namespace != "" {
+		cpuQuery = fmt.Sprintf(`rate(container_cpu_usage_seconds_total{namespace="%s"}[5m])`, namespace)
+	}
 
-// 	cpuResult, err := s.promClient.QueryRange(ctx, cpuQuery, startTime, endTime, step)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to get CPU history: %v", err)
-// 	}
+	cpuResult, err := s.promClient.QueryRange(ctx, cpuQuery, startTime, endTime, step)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get CPU history: %v", err)
+	}
 
-// 	memQuery := "container_memory_usage_bytes"
-// 	if namespace != "" {
-// 		memQuery = fmt.Sprintf(`container_memory_usage_bytes{namespace="%s"}`, namespace)
-// 	}
+	memQuery := "container_memory_usage_bytes"
+	if namespace != "" {
+		memQuery = fmt.Sprintf(`container_memory_usage_bytes{namespace="%s"}`, namespace)
+	}
 
-// 	memResult, err := s.promClient.QueryRange(ctx, memQuery, startTime, endTime, step)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("failed to get memory history: %v", err)
-// 	}
+	memResult, err := s.promClient.QueryRange(ctx, memQuery, startTime, endTime, step)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get memory history: %v", err)
+	}
 
-// 	// historyPoints :=
-// }
+	historyPoints := s.convertToCostHistory(*cpuResult, *memResult)
+
+	return &internal.CostHistory{
+		Period:    duration.String(),
+		StartTime: startTime,
+		EndTime:   endTime,
+		Data:      historyPoints,
+	}, nil
+}
 
 func (s *CostService) GetNodeCosts(ctx context.Context) ([]internal.NodeCost, error) {
 	nodes, err := s.k8sClient.GetNodes()
@@ -258,10 +265,10 @@ func (s *CostService) convertToCostHistory(cpuResult, memResult prometheus.Range
 			cpuUsage := value.Value
 			cpuCost := cpuUsage * s.config.CPUCostPerHour
 
-			point, exists := timestampMap[timestamp]
+			point, exists := timestampMap[timestamp.Unix()]
 			if !exists {
-				point = &internal.CostHistoryPoint{Timestamp: time.Unix(timestamp, 0)}
-				timestampMap[timestamp] = point
+				point = &internal.CostHistoryPoint{Timestamp: time.Unix(timestamp.Unix(), 0)}
+				timestampMap[timestamp.Unix()] = point
 			}
 			point.CPUCost += cpuCost
 		}
@@ -275,10 +282,10 @@ func (s *CostService) convertToCostHistory(cpuResult, memResult prometheus.Range
 			memoryGB := memoryUsage / (1024 * 1024 * 1024)
 			memoryCost := memoryGB * s.config.MemoryCostPerGB
 
-			point, exists := timestampMap[timestamp]
+			point, exists := timestampMap[timestamp.Unix()]
 			if !exists {
-				point = &internal.CostHistoryPoint{Timestamp: time.Unix(timestamp, 0)}
-				timestampMap[timestamp] = point
+				point = &internal.CostHistoryPoint{Timestamp: time.Unix(timestamp.Unix(), 0)}
+				timestampMap[timestamp.Unix()] = point
 			}
 			point.MemoryCost += memoryCost
 		}
