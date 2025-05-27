@@ -26,6 +26,36 @@ func NewCostService(k8sClient *kubernetes.Client, promClient *prometheus.Client)
 }
 
 func (s *CostService) GetCostOverview(ctx context.Context) (*internal.CostOverview, error) {
+	namespaces, err := s.k8sClient.GetNamespaces()
+	if err != nil {
+		return nil, fmt.Errorf("failed to get namespaces: %v", err)
+	}
+
+	var totalCPUCost, totalMemoryCost, totalStorageCost float64
+	namespaceCosts := make([]internal.NamespaceCost, 0, len(namespaces.Items))
+
+	for _, ns := range namespaces.Items {
+		nsCost, err := s.calculateNamespaceCost(ctx, ns.Name)
+		if err != nil {
+			continue
+		}
+
+		totalCPUCost += nsCost.CPUCost
+		totalMemoryCost += nsCost.MemoryCost
+		totalStorageCost += nsCost.StorageCost
+
+		namespaceCosts = append(namespaceCosts, *nsCost)
+	}
+
+	return &internal.CostOverview{
+		TotalCost: internal.CostBreakdown{
+			CPUCost:     totalCPUCost,
+			MemoryCost:  totalMemoryCost,
+			StorageCost: totalStorageCost,
+		},
+		NamespacesCost: namespaceCosts,
+		Timestamp:      time.Now(),
+	}, nil
 
 }
 
@@ -56,7 +86,7 @@ func (s *CostService) GetCostOverview(ctx context.Context) (*internal.CostOvervi
 // 	// historyPoints :=
 // }
 
-func (s *CostService) GetNodeCosts(ctx context.Context) (*internal.NodeCost, error) {
+func (s *CostService) GetNodeCosts(ctx context.Context) ([]internal.NodeCost, error) {
 	nodes, err := s.k8sClient.GetNodes()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get nodes: %v", err)
@@ -74,7 +104,7 @@ func (s *CostService) GetNodeCosts(ctx context.Context) (*internal.NodeCost, err
 	return costs, err
 }
 
-func (s *CostService) GetNamespaceCosts(ctx context.Context) (*internal.NamespaceCost, error) {
+func (s *CostService) GetNamespaceCosts(ctx context.Context) ([]internal.NamespaceCost, error) {
 	namespaces, err := s.k8sClient.GetNamespaces()
 	if err != nil {
 		return nil, fmt.Errorf("failed to get namespaces: %v", err)
