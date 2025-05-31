@@ -11,12 +11,13 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/clientcmd"
 	"k8s.io/client-go/util/homedir"
-	metricsv1beta1 "k8s.io/metrics/pkg/client/clientset/versioned"
+	metricsv1beta1 "k8s.io/metrics/pkg/apis/metrics/v1beta1"
+	metricsclientset "k8s.io/metrics/pkg/client/clientset/versioned"
 )
 
 type Client struct {
 	clientset        *kubernetes.Clientset
-	metricsClientset *metricsv1beta1.Clientset
+	metricsClientset *metricsclientset.Clientset
 }
 
 func NewClient(kubeConfigPath string) (*Client, error) {
@@ -50,7 +51,7 @@ func NewClient(kubeConfigPath string) (*Client, error) {
 		return nil, fmt.Errorf("Failed to create kubernetes clientset %v", err)
 	}
 
-	metricsClientset, err := metricsv1beta1.NewForConfig(config)
+	metricsClientset, err := metricsclientset.NewForConfig(config)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create metrics clientset: %v", err)
 	}
