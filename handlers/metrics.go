@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/SinghaAnirban005/KuBudget/services"
@@ -22,7 +23,8 @@ func (h *MetricsHandler) GetPrometheusMetrics(c *fiber.Ctx) error {
 
 	namespace := c.Query("namespace", "")
 	pod := c.Query("pod", "")
-
+	fmt.Println("Namespace " + namespace)
+	fmt.Println("POD " + pod)
 	metrics, err := h.metricsService.GetPrometheusMetrics(ctx, namespace, pod)
 
 	if err != nil {
