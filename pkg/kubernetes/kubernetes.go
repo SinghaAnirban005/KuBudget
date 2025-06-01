@@ -34,17 +34,18 @@ func NewClient(kubeConfigPath string) (*Client, error) {
 	if kubeConfigPath != "" {
 		config, err = clientcmd.BuildConfigFromFlags("", kubeConfigPath)
 		if err != nil {
-			config, err = rest.InClusterConfig()
-			if err != nil {
-				return nil, fmt.Errorf("Failed to create kubernetes config %v", err)
-			}
+			fmt.Printf("Failed to load kubeconfig at %s: %v\n", kubeConfigPath, err)
 		}
-	} else {
+	}
+
+	if config == nil {
 		config, err = rest.InClusterConfig()
 		if err != nil {
 			return nil, fmt.Errorf("failed to create in-cluster config: %v", err)
 		}
 	}
+
+	fmt.Printf("Using Kubernetes API server at: %s\n", config.Host)
 
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
