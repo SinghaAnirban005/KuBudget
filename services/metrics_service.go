@@ -96,6 +96,7 @@ func (s *MetricsService) GetClusterMetrics(ctx context.Context) (*internal.Clust
 
 	cpuQuery := `(1 - avg(rate(node_cpu_seconds_total{mode="idle"}[5m]))) * 100`
 	cpuResult, err := s.promClient.Query(ctx, cpuQuery)
+	fmt.Println("Hi there")
 	var cpuUtilization float64
 	if err == nil && len(cpuResult.Data.Result) > 0 {
 		cpuUtilization = cpuResult.Data.Result[0].Value
